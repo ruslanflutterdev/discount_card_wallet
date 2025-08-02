@@ -19,8 +19,8 @@ class ImagePreview extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style:  TextStyle(fontWeight: FontWeight.bold)),
-         SizedBox(height: 5),
+        Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+        SizedBox(height: 5),
         if (file != null)
           Stack(
             children: [
@@ -34,7 +34,7 @@ class ImagePreview extends StatelessWidget {
                 top: 5,
                 right: 5,
                 child: IconButton(
-                  icon:  Icon(Icons.cancel, color: Colors.red),
+                  icon: Icon(Icons.cancel, color: Colors.red),
                   onPressed: onClear,
                 ),
               ),
@@ -46,9 +46,9 @@ class ImagePreview extends StatelessWidget {
             width: double.infinity,
             color: Colors.grey[300],
             alignment: Alignment.center,
-            child:  Text('Нет изображения'),
+            child: Text('Нет изображения'),
           ),
-         SizedBox(height: 10),
+        SizedBox(height: 10),
       ],
     );
   }

@@ -13,16 +13,16 @@ class HomeScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title:  Text('Мои дисконтные карты'),
+        title: Text('Мои дисконтные карты'),
         actions: [
           IconButton(
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) =>  AddCardScreen()),
+                MaterialPageRoute(builder: (_) => AddCardScreen()),
               );
             },
-            icon:  Icon(Icons.add),
+            icon: Icon(Icons.add),
           ),
         ],
       ),
@@ -35,10 +35,10 @@ class HomeScreen extends ConsumerWidget {
               leading: card.storeLogoUrl.isNotEmpty
                   ? Image.network(card.storeLogoUrl, width: 40, height: 40)
                   : Image.asset(
-                'assets/default_logo.png',
-                width: 40,
-                height: 40,
-              ),
+                      'assets/default_logo.png',
+                      width: 40,
+                      height: 40,
+                    ),
               title: Text(card.storeName),
               subtitle: Text(card.createdAt.toLocal().toString()),
               onTap: () {
@@ -52,7 +52,7 @@ class HomeScreen extends ConsumerWidget {
             );
           },
         ),
-        loading: () =>  Center(child: CircularProgressIndicator()),
+        loading: () => Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(child: Text('Ошибка загрузки: $e')),
       ),
     );

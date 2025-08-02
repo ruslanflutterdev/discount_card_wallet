@@ -26,14 +26,13 @@ class CardDetailsScreen extends StatelessWidget {
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
                           ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                                loadingProgress.expectedTotalBytes!
                           : null,
                     ),
                   );
                 },
               ),
-            if (card.backImageUrl.isNotEmpty)
-               SizedBox(height: 16),
+            if (card.backImageUrl.isNotEmpty) SizedBox(height: 16),
             if (card.backImageUrl.isNotEmpty)
               Image.network(
                 card.backImageUrl,
@@ -47,17 +46,17 @@ class CardDetailsScreen extends StatelessWidget {
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
                           ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
+                                loadingProgress.expectedTotalBytes!
                           : null,
                     ),
                   );
                 },
               ),
             Padding(
-              padding:  EdgeInsets.all(16.0),
+              padding: EdgeInsets.all(16.0),
               child: Text(
                 card.notes.isNotEmpty ? card.notes : 'Нет заметок',
-                style:  TextStyle(fontSize: 16),
+                style: TextStyle(fontSize: 16),
               ),
             ),
           ],

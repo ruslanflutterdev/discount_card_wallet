@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
-
+import '../models/discount_card_model.dart';
 import '../providers/discount_cards_provider.dart';
 import '../widgets/image_preview.dart';
 
 class AddCardScreen extends ConsumerStatefulWidget {
-  const AddCardScreen({super.key});
+  final DiscountCardModel? cardToEdit;
+
+  const AddCardScreen({super.key, this.cardToEdit});
 
   @override
   ConsumerState<AddCardScreen> createState() => _AddCardScreenState();
@@ -20,9 +22,13 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
   late final TextEditingController _storeNameController;
   late final TextEditingController _notesController;
 
-  File? _storeLogo;
-  File? _frontImage;
-  File? _backImage;
+  File? _storeLogoFile;
+  File? _frontImageFile;
+  File? _backImageFile;
+
+  String? _storeLogoUrl;
+  String? _frontImageUrl;
+  String? _backImageUrl;
 
   bool _isLoading = false;
 
@@ -31,8 +37,14 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
   @override
   void initState() {
     super.initState();
-    _storeNameController = TextEditingController();
-    _notesController = TextEditingController();
+    _storeNameController = TextEditingController(
+      text: widget.cardToEdit?.storeName,
+    );
+    _notesController = TextEditingController(text: widget.cardToEdit?.notes);
+
+    _storeLogoUrl = widget.cardToEdit?.storeLogoUrl;
+    _frontImageUrl = widget.cardToEdit?.frontImageUrl;
+    _backImageUrl = widget.cardToEdit?.backImageUrl;
   }
 
   @override
@@ -69,9 +81,8 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
 
     try {
       final supabase = ref.read(supabaseProvider);
-      final fileName = '${Uuid().v4()}_${file.path.split('/').last}';
+      final fileName = '${const Uuid().v4()}_${file.path.split('/').last}';
       final fullPath = 'user_uploads/$fileName';
-
       await supabase.storage.from('cards').upload(fullPath, file);
       final publicUrl = supabase.storage.from('cards').getPublicUrl(fullPath);
 
@@ -88,12 +99,23 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
     }
   }
 
+  Future<void> _deleteOldImage(String? url) async {
+    if (url == null || url.isEmpty) return;
+    try {
+      final supabase = ref.read(supabaseProvider);
+      final path = url.split('user_uploads/')[1];
+      await supabase.storage.from('cards').remove(['user_uploads/$path']);
+    } on Exception catch (e) {
+      debugPrint('Ошибка удаления файла: $e');
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    if (_frontImage == null) {
+    if (_frontImageFile == null && _frontImageUrl == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Лицевая сторона карты обязательна'),
@@ -102,39 +124,50 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
       );
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
-      final logoUrl = await _uploadFile(
-        label: 'логотип магазина',
-        file: _storeLogo,
-      );
-      final frontUrl = await _uploadFile(
-        label: 'лицевая сторона',
-        file: _frontImage,
-      );
+      final logoUrl = _storeLogoFile != null
+          ? await _uploadFile(label: 'логотип магазина', file: _storeLogoFile)
+          : _storeLogoUrl;
+      final frontUrl = _frontImageFile != null
+          ? await _uploadFile(label: 'лицевая сторона', file: _frontImageFile)
+          : _frontImageUrl;
+      final backUrl = _backImageFile != null
+          ? await _uploadFile(label: 'обратная сторона', file: _backImageFile)
+          : _backImageUrl;
 
       if (frontUrl == null) {
         return;
       }
 
-      final backUrl = await _uploadFile(
-        label: 'обратная сторона',
-        file: _backImage,
-      );
-
+      if (_storeLogoFile != null && _storeLogoUrl != null) {
+        await _deleteOldImage(_storeLogoUrl);
+      }
+      if (_frontImageFile != null && _frontImageUrl != null) {
+        await _deleteOldImage(_frontImageUrl);
+      }
+      if (_backImageFile != null && _backImageUrl != null) {
+        await _deleteOldImage(_backImageUrl);
+      }
       final supabase = ref.read(supabaseProvider);
-      await supabase.from('discount_cards').insert({
+      final data = {
         'store_name': _storeNameController.text,
         'store_logo_url': logoUrl ?? '',
         'front_image_url': frontUrl,
         'back_image_url': backUrl ?? '',
         'notes': _notesController.text,
-      });
+      };
+
+      if (widget.cardToEdit == null) {
+        await supabase.from('discount_cards').insert(data);
+      } else {
+        await supabase
+            .from('discount_cards')
+            .update(data)
+            .eq('id', widget.cardToEdit!.id);
+      }
 
       if (!mounted) return;
-
       ref.invalidate(discountCardsProvider);
 
       Navigator.pop(context);
@@ -153,8 +186,11 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.cardToEdit != null;
     return Scaffold(
-      appBar: AppBar(title: Text('Создать карту')),
+      appBar: AppBar(
+        title: Text(isEditing ? 'Редактировать карту' : 'Создать карту'),
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Form(
@@ -170,48 +206,60 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
               SizedBox(height: 16),
 
               ImagePreview(
-                file: _storeLogo,
+                file: _storeLogoFile,
+                imageUrl: _storeLogoUrl,
                 label: 'Логотип магазина (можно пропустить)',
-                onClear: () => setState(() => _storeLogo = null),
+                onClear: () => setState(() {
+                  _storeLogoFile = null;
+                  _storeLogoUrl = null;
+                }),
               ),
               ElevatedButton(
                 onPressed: _isLoading
                     ? null
                     : () => _pickImage(
                         ImageSource.gallery,
-                        (f) => setState(() => _storeLogo = f),
+                        (f) => setState(() => _storeLogoFile = f),
                       ),
                 child: Text('Выбрать логотип из галереи'),
               ),
               SizedBox(height: 16),
 
               ImagePreview(
-                file: _frontImage,
+                file: _frontImageFile,
+                imageUrl: _frontImageUrl,
                 label: 'Лицевая сторона карты *',
-                onClear: () => setState(() => _frontImage = null),
+                onClear: () => setState(() {
+                  _frontImageFile = null;
+                  _frontImageUrl = null;
+                }),
               ),
               ElevatedButton(
                 onPressed: _isLoading
                     ? null
                     : () => _pickImage(
                         ImageSource.camera,
-                        (f) => setState(() => _frontImage = f),
+                        (f) => setState(() => _frontImageFile = f),
                       ),
                 child: Text('Сфотографировать лицевую'),
               ),
               SizedBox(height: 16),
 
               ImagePreview(
-                file: _backImage,
+                file: _backImageFile,
+                imageUrl: _backImageUrl,
                 label: 'Обратная сторона (можно пропустить)',
-                onClear: () => setState(() => _backImage = null),
+                onClear: () => setState(() {
+                  _backImageFile = null;
+                  _backImageUrl = null;
+                }),
               ),
               ElevatedButton(
                 onPressed: _isLoading
                     ? null
                     : () => _pickImage(
                         ImageSource.camera,
-                        (f) => setState(() => _backImage = f),
+                        (f) => setState(() => _backImageFile = f),
                       ),
                 child: Text('Сфотографировать обратную'),
               ),

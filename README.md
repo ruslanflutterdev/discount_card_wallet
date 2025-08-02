@@ -1,16 +1,21 @@
-# discount_card_wallet
+# discount_card_wallet — мобильное приложение для создания, редактирования и удаления персонализированных карточек с изображениями, хранящимися в Supabase.
 
-A new Flutter project.
+## 🚀 Возможности
 
-## Getting Started
+- 📇 Создание новых карточек с именем, описанием и изображением.
+- 🖊️ Редактирование существующих карточек.
+- 🗑️ Удаление карточек.
+- 📸 Загрузка изображений с камеры или галереи.
+- ☁️ Хранение данных и изображений в Supabase (Database + Storage).
+- 🔐 Аутентификация пользователей через Supabase Auth.
+- ✅ Использование публичного bucket с политиками доступа (insert, update, delete).
+- 📱 UI на Flutter.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ Используемые технологии
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- *Flutter* — UI-фреймворк
+- *Supabase* — бекенд (Auth, Database, Storage)
+- *Image Picker* — загрузка изображений с камеры/галереи
+- *Riverpod / Provider* (если используется) — управление состоянием
